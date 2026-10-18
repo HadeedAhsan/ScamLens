@@ -1,4 +1,4 @@
-
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import { useRef, useState } from 'react'
 import { createWorker } from 'tesseract.js'
 
