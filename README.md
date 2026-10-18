@@ -170,6 +170,22 @@ ScamLens uses Google Gemini to interpret message content and produce a structure
 
 The server validates the AI response before returning it to the frontend. If the AI service is temporarily unavailable, returns an invalid response, or reaches its quota limit, ScamLens displays a user-friendly error instead of exposing the full provider error.
 
+## Screenshots
+
+Explore the ScamLens interface and see how it helps users understand potentially suspicious messages.
+
+### 1. Home — Message Scanner
+
+![ScamLens home page and message scanner](screenshots/home.png)
+
+### 2. AI Analysis Results
+
+![ScamLens AI analysis showing risk assessment and warning signs](screenshots/analysis-result.png)
+
+### 3. Screenshot Text Extraction
+
+![ScamLens screenshot upload and text extraction interface](screenshots/screenshot-analysis.png)
+
 **Quota limitations:** AI availability depends on the configured Google Cloud project, model, usage tier, and billing settings. Exhausting a quota can temporarily prevent new analyses. Changing the error message does not increase the available quota.
 
 ## Deployment
@@ -217,6 +233,14 @@ Potential future improvements include:
 - Expanded validation and monitoring of AI assessment quality.
 
 These are potential improvements, not claims about features already implemented.
+
+## Contributers
+
+**Hadeed Ahsan**  — Creator & Sole Contributor
+
+Designed, developed, and maintained this project independently, including its implementation, user interface, functionality, testing, and documentation.
+
+All project development and contributions were carried out individually.
 
 ## Project Information
 
