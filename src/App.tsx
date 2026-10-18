@@ -235,10 +235,7 @@ function App() {
             className="group flex items-center gap-3 rounded-lg"
             aria-label="ScamLens home"
           >
-            <span className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 text-xl font-bold text-white shadow-lg shadow-blue-600/25 ring-1 ring-blue-300/40 transition duration-300 group-hover:scale-105 group-hover:shadow-blue-500/40">
-              S
-              <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-[#080d1b] bg-blue-300" />
-            </span>
+            <img src="/scamlens-logo.png" alt="ScamLens logo" className="h-11 w-11 rounded-xl object-contain"/>
             <span>
               <span className="block font-['Space_Grotesk'] text-xl font-bold tracking-tight text-white">
                 Scam<span className="text-blue-400">Lens</span>
