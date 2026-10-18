@@ -1,3 +1,4 @@
+
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { GoogleGenAI } from '@google/genai'
 import { z } from 'zod'
@@ -25,7 +26,9 @@ export default async function handler(
 ) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST')
-    return res.status(405).json({ error: 'Method not allowed.' })
+    return res.status(405).json({
+      error: 'Method not allowed.',
+    })
   }
 
   const bodySchema = z.object({
@@ -109,7 +112,17 @@ ${JSON.stringify(input.data.message)}
       throw new Error('The AI returned an empty response.')
     }
 
-    const parsedJson: unknown = JSON.parse(response.text)
+    let parsedJson: unknown
+
+    try {
+      parsedJson = JSON.parse(response.text)
+    } catch {
+      console.error('Gemini returned invalid JSON.')
+      return res.status(502).json({
+        error: 'The analysis response was invalid. Please try again.',
+      })
+    }
+
     const validatedResult = resultSchema.safeParse(parsedJson)
 
     if (!validatedResult.success) {
@@ -120,14 +133,40 @@ ${JSON.stringify(input.data.message)}
     }
 
     return res.status(200).json(validatedResult.data)
-  } catch (error) {
-    console.error(
-      'ScamLens analysis failed:',
-      error instanceof Error ? error.message : 'Unknown error',
-    )
+  } catch (error: unknown) {
+    const details =
+      typeof error === 'object' && error !== null
+        ? (error as {
+            status?: number
+            code?: number | string
+            message?: string
+          })
+        : {}
+
+    const status = Number(details.status ?? details.code)
+    const message =
+      typeof details.message === 'string' ? details.message : ''
+
+    const isQuotaError =
+      status === 429 ||
+      /RESOURCE_EXHAUSTED|quota exceeded|rate limit/i.test(message)
+
+    console.error('ScamLens Gemini request failed:', {
+      status: Number.isFinite(status) ? status : 'unknown',
+      message: message || 'Unknown error',
+    })
+
+    if (isQuotaError) {
+      return res.status(429).json({
+        code: 'AI_QUOTA_EXCEEDED',
+        error:
+          'ScamLens has reached its current AI usage limit. Please try again later. Independently verify important claims before taking action.',
+      })
+    }
 
     return res.status(502).json({
-      error: 'Analysis is temporarily unavailable. Please try again.',
+      error:
+        'AI analysis is temporarily unavailable. Please try again later.',
     })
   }
 }
