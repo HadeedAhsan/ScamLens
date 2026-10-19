@@ -1,4 +1,3 @@
-import { SpeedInsights } from "@vercel/speed-insights/next"
 import { useRef, useState } from 'react'
 import { createWorker } from 'tesseract.js'
 
@@ -16,6 +15,54 @@ type Analysis = {
   recommendedActions: string[]
   uncertainty: string
 }
+
+
+const RISK_LEVELS = ['low', 'medium', 'high', 'inconclusive'] as const
+
+function isNonEmptyString(value: unknown, maxLength: number): value is string {
+  return (
+    typeof value === 'string' &&
+    value.trim().length > 0 &&
+    value.length <= maxLength
+  )
+}
+
+function isAnalysis(value: unknown): value is Analysis {
+  if (typeof value !== 'object' || value === null) return false
+
+  const data = value as Record<string, unknown>
+
+  return (
+    typeof data.riskLevel === 'string' &&
+    RISK_LEVELS.includes(data.riskLevel as (typeof RISK_LEVELS)[number]) &&
+    isNonEmptyString(data.summary, 600) &&
+    Array.isArray(data.warningSigns) &&
+    data.warningSigns.length <= 8 &&
+    data.warningSigns.every((item: unknown) => {
+      if (typeof item !== 'object' || item === null) return false
+      const sign = item as Record<string, unknown>
+
+      return (
+        isNonEmptyString(sign.signal, 200) &&
+        isNonEmptyString(sign.evidence, 12000) &&
+        isNonEmptyString(sign.explanation, 1000)
+      )
+    }) &&
+    Array.isArray(data.reassuringSigns) &&
+    data.reassuringSigns.length <= 5 &&
+    data.reassuringSigns.every((item: unknown) =>
+      isNonEmptyString(item, 1000),
+    ) &&
+    Array.isArray(data.recommendedActions) &&
+    data.recommendedActions.length >= 1 &&
+    data.recommendedActions.length <= 6 &&
+    data.recommendedActions.every((item: unknown) =>
+      isNonEmptyString(item, 1000),
+    ) &&
+    isNonEmptyString(data.uncertainty, 500)
+  )
+}
+
 
 const MAX_LENGTH = 12000
 const MAX_IMAGE_SIZE = 8 * 1024 * 1024
@@ -114,6 +161,54 @@ function App() {
   const [error, setError] = useState('')
   const fileInput = useRef<HTMLInputElement>(null)
 
+  async function preprocessImage(file: File): Promise<HTMLCanvasElement> {
+  const image = await createImageBitmap(file)
+
+  try {
+    const scale = Math.min(2, 2400 / Math.max(image.width, image.height))
+    const canvas = document.createElement('canvas')
+
+    canvas.width = Math.round(image.width * scale)
+    canvas.height = Math.round(image.height * scale)
+
+    const context = canvas.getContext('2d')
+
+    if (!context) {
+      throw new Error('Unable to prepare image for text recognition.')
+    }
+
+    context.drawImage(image, 0, 0, canvas.width, canvas.height)
+
+    const imageData = context.getImageData(
+      0,
+      0,
+      canvas.width,
+      canvas.height,
+    )
+
+    const pixels = imageData.data
+
+    for (let i = 0; i < pixels.length; i += 4) {
+      const gray =
+        0.299 * pixels[i] +
+        0.587 * pixels[i + 1] +
+        0.114 * pixels[i + 2]
+
+      const contrast = Math.max(0, Math.min(255, (gray - 128) * 1.25 + 128))
+
+      pixels[i] = contrast
+      pixels[i + 1] = contrast
+      pixels[i + 2] = contrast
+    }
+
+    context.putImageData(imageData, 0, 0)
+
+    return canvas
+  } finally {
+    image.close()
+  }
+}
+
   async function handleImage(file?: File) {
     if (!file) return
 
@@ -150,7 +245,8 @@ function App() {
         },
       })
 
-      const result = await worker.recognize(file)
+      const processedImage = await preprocessImage(file)
+      const result = await worker.recognize(processedImage)
       const extracted = result.data.text.trim()
 
       if (!extracted) {
@@ -203,15 +299,34 @@ function App() {
     setError('')
     setAnalysis(null)
 
-    
-try {
-  const response = await fetch('/api/analyze', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: cleaned }),
-  })
 
-  const data: unknown = await response.json()
+
+const controller = new AbortController()
+const timeoutId = window.setTimeout(() => controller.abort(), 30_000)
+
+try {
+  let response: Response
+
+  try {
+    response = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: cleaned }),
+      signal: controller.signal,
+    })
+  } finally {
+    window.clearTimeout(timeoutId)
+  }
+
+  let data: unknown
+
+  try {
+    data = await response.json()
+  } catch {
+    throw new Error(
+      'ScamLens received an unexpected response. Please try again.',
+    )
+  }
 
   if (!response.ok) {
     const detail =
@@ -225,34 +340,18 @@ try {
     throw new Error(detail)
   }
 
-  if (
-    typeof data !== 'object' ||
-    data === null ||
-    !('riskLevel' in data) ||
-    !('summary' in data) ||
-    !('warningSigns' in data) ||
-    !('reassuringSigns' in data) ||
-    !('recommendedActions' in data) ||
-    !('uncertainty' in data) ||
-    !['low', 'medium', 'high', 'inconclusive'].includes(
-      String(data.riskLevel),
-    ) ||
-    typeof data.summary !== 'string' ||
-    !Array.isArray(data.warningSigns) ||
-    !Array.isArray(data.reassuringSigns) ||
-    !Array.isArray(data.recommendedActions) ||
-    typeof data.uncertainty !== 'string'
-  ) {
+  if (!isAnalysis(data)) {
     throw new Error(
       'The analysis returned an invalid response. Please try again.',
     )
   }
 
-  const nextAnalysis = data as Analysis
-  setAnalysis(nextAnalysis)
+  setAnalysis(data)
   setSelectedWarningIndex(0)
 } catch (err) {
-  if (err instanceof TypeError) {
+  if (err instanceof Error && err.name === 'AbortError') {
+    setError('The request took too long. Please try again.')
+  } else if (err instanceof TypeError) {
     setError(
       'Unable to connect to ScamLens. Check your internet connection and try again.',
     )
@@ -266,6 +365,7 @@ try {
 } finally {
   setBusy(false)
 }
+
 
   }
 

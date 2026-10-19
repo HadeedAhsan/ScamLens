@@ -1,7 +1,15 @@
+import 'dotenv/config'
+import dotenv from 'dotenv'
+import { resolve } from 'node:path'
 
+dotenv.config({ path: resolve(process.cwd(), '.env.local') })
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { GoogleGenAI } from '@google/genai'
 import { z } from 'zod'
+
+import { Redis } from '@upstash/redis'
+import { Ratelimit } from '@upstash/ratelimit'
+import { createHash } from 'node:crypto'
 
 const resultSchema = z.object({
   riskLevel: z.enum(['low', 'medium', 'high', 'inconclusive']),
@@ -19,6 +27,22 @@ const resultSchema = z.object({
 })
 
 const MAX_MESSAGE_LENGTH = 12000
+const redisUrl = process.env.UPSTASH_REDIS_REST_URL
+const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN
+
+const redis =
+  redisUrl && redisToken
+    ? new Redis({ url: redisUrl, token: redisToken })
+    : null
+
+const rateLimiter = redis
+  ? new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(10, '10 m'),
+      analytics: false,
+      prefix: 'scamlens:analysis',
+    })
+  : null
 
 export default async function handler(
   req: VercelRequest,
@@ -42,6 +66,53 @@ export default async function handler(
       error: 'Enter a message of up to 12,000 characters.',
     })
   }
+  if (!rateLimiter) {
+  console.error('Rate limiter is not configured.')
+  return res.status(503).json({
+    code: 'RATE_LIMITER_UNAVAILABLE',
+    error: 'ScamLens is temporarily unavailable. Please try again later.',
+  })
+}
+
+const forwardedFor = req.headers['x-forwarded-for']
+const clientIp =
+  (typeof forwardedFor === 'string'
+    ? forwardedFor.split(',')[0]?.trim()
+    : undefined) ||
+  req.headers['x-real-ip']?.toString().trim()
+
+if (!clientIp) {
+  return res.status(503).json({
+    error: 'Unable to verify this request. Please try again later.',
+  })
+}
+
+try {
+  const identifier = createHash('sha256')
+    .update(clientIp)
+    .digest('hex')
+
+  const { success, reset } = await rateLimiter.limit(identifier)
+
+  if (!success) {
+    const retryAfter = Math.max(
+      1,
+      Math.ceil((reset - Date.now()) / 1000),
+    )
+
+    res.setHeader('Retry-After', String(retryAfter))
+
+    return res.status(429).json({
+      code: 'RATE_LIMITED',
+      error: 'You have reached the request limit. Please wait a few minutes and try again.',
+    })
+  }
+} catch (error) {
+  console.error('ScamLens rate limiter failed.')
+  return res.status(503).json({
+    error: 'ScamLens is temporarily unavailable. Please try again later.',
+  })
+}
 
   const apiKey = process.env.GEMINI_API_KEY
 
