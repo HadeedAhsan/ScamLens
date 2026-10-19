@@ -1,32 +1,17 @@
+
 import 'dotenv/config'
 import dotenv from 'dotenv'
 import { resolve } from 'node:path'
-
-dotenv.config({ path: resolve(process.cwd(), '.env.local') })
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { GoogleGenAI } from '@google/genai'
-import { z } from 'zod'
-
 import { Redis } from '@upstash/redis'
 import { Ratelimit } from '@upstash/ratelimit'
 import { createHash } from 'node:crypto'
 
-const resultSchema = z.object({
-  riskLevel: z.enum(['low', 'medium', 'high', 'inconclusive']),
-  summary: z.string().min(1).max(600),
-  warningSigns: z.array(
-    z.object({
-      signal: z.string(),
-      evidence: z.string(),
-      explanation: z.string(),
-    }),
-  ).max(8),
-  reassuringSigns: z.array(z.string()).max(5),
-  recommendedActions: z.array(z.string()).min(1).max(6),
-  uncertainty: z.string().min(1).max(500),
-})
+import { bodySchema, resultSchema } from './analyze.schemas'
 
-const MAX_MESSAGE_LENGTH = 12000
+dotenv.config({ path: resolve(process.cwd(), '.env.local') })
+
 const redisUrl = process.env.UPSTASH_REDIS_REST_URL
 const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN
 
@@ -55,10 +40,6 @@ export default async function handler(
     })
   }
 
-  const bodySchema = z.object({
-    message: z.string().trim().min(1).max(MAX_MESSAGE_LENGTH),
-  })
-
   const input = bodySchema.safeParse(req.body)
 
   if (!input.success) {
@@ -66,53 +47,55 @@ export default async function handler(
       error: 'Enter a message of up to 12,000 characters.',
     })
   }
+
   if (!rateLimiter) {
-  console.error('Rate limiter is not configured.')
-  return res.status(503).json({
-    code: 'RATE_LIMITER_UNAVAILABLE',
-    error: 'ScamLens is temporarily unavailable. Please try again later.',
-  })
-}
-
-const forwardedFor = req.headers['x-forwarded-for']
-const clientIp =
-  (typeof forwardedFor === 'string'
-    ? forwardedFor.split(',')[0]?.trim()
-    : undefined) ||
-  req.headers['x-real-ip']?.toString().trim()
-
-if (!clientIp) {
-  return res.status(503).json({
-    error: 'Unable to verify this request. Please try again later.',
-  })
-}
-
-try {
-  const identifier = createHash('sha256')
-    .update(clientIp)
-    .digest('hex')
-
-  const { success, reset } = await rateLimiter.limit(identifier)
-
-  if (!success) {
-    const retryAfter = Math.max(
-      1,
-      Math.ceil((reset - Date.now()) / 1000),
-    )
-
-    res.setHeader('Retry-After', String(retryAfter))
-
-    return res.status(429).json({
-      code: 'RATE_LIMITED',
-      error: 'You have reached the request limit. Please wait a few minutes and try again.',
+    console.error('Rate limiter is not configured.')
+    return res.status(503).json({
+      code: 'RATE_LIMITER_UNAVAILABLE',
+      error: 'ScamLens is temporarily unavailable. Please try again later.',
     })
   }
-} catch (error) {
-  console.error('ScamLens rate limiter failed.')
-  return res.status(503).json({
-    error: 'ScamLens is temporarily unavailable. Please try again later.',
-  })
-}
+
+  const forwardedFor = req.headers['x-forwarded-for']
+  const clientIp =
+    (typeof forwardedFor === 'string'
+      ? forwardedFor.split(',')[0]?.trim()
+      : undefined) ||
+    req.headers['x-real-ip']?.toString().trim()
+
+  if (!clientIp) {
+    return res.status(503).json({
+      error: 'Unable to verify this request. Please try again later.',
+    })
+  }
+
+  try {
+    const identifier = createHash('sha256')
+      .update(clientIp)
+      .digest('hex')
+
+    const { success, reset } = await rateLimiter.limit(identifier)
+
+    if (!success) {
+      const retryAfter = Math.max(
+        1,
+        Math.ceil((reset - Date.now()) / 1000),
+      )
+
+      res.setHeader('Retry-After', String(retryAfter))
+
+      return res.status(429).json({
+        code: 'RATE_LIMITED',
+        error:
+          'You have reached the request limit. Please wait a few minutes and try again.',
+      })
+    }
+  } catch {
+    console.error('ScamLens rate limiter failed.')
+    return res.status(503).json({
+      error: 'ScamLens is temporarily unavailable. Please try again later.',
+    })
+  }
 
   const apiKey = process.env.GEMINI_API_KEY
 

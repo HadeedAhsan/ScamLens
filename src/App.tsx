@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { createWorker } from 'tesseract.js'
 
+
 type RiskLevel = 'low' | 'medium' | 'high' | 'inconclusive'
 
 type Analysis = {
