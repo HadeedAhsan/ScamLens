@@ -245,6 +245,10 @@ function App() {
         },
       })
 
+      await worker.setParameters({
+  preserve_interword_spaces: '1',
+})
+
       const processedImage = await preprocessImage(file)
       const result = await worker.recognize(processedImage)
       const extracted = result.data.text.trim()
