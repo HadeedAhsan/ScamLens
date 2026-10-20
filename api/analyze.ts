@@ -8,7 +8,7 @@ import { Redis } from '@upstash/redis'
 import { Ratelimit } from '@upstash/ratelimit'
 import { createHash } from 'node:crypto'
 
-import { bodySchema, resultSchema } from './analyze.schemas'
+import { bodySchema, resultSchema } from './analyze.schemas.js'
 
 dotenv.config({ path: resolve(process.cwd(), '.env.local') })
 
