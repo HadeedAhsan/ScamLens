@@ -554,7 +554,7 @@ try {
                 type="button"
                 onClick={() => fileInput.current?.click()}
                 disabled={ocrBusy || busy}
-                className="group/upload flex min-h-28 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-blue-400/35 bg-blue-500/[0.045] px-2.5 py-4 text-center transition-colors duration-200 hover:border-blue-400/70 hover:bg-blue-500/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200 focus-visible:ring-offset-2 focus-visible:ring-offset-[#101a30] disabled:cursor-not-allowed disabled:opacity-60"
+                className="group/upload flex min-h-28 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-blue-400/35 bg-blue-500/[0.045] px-2.5 py-4 text-center transition-colors duration-200 hover:-translate-y-1 hover:border-blue-300/80 hover:bg-blue-500/[0.10] hover:shadow-lg hover:shadow-blue-950/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#101a30] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-blue-400/20 bg-blue-500/10 text-xl text-blue-300 transition duration-300 group-hover/upload:scale-110 group-hover/upload:bg-blue-500/20">
                   ↑
@@ -576,7 +576,7 @@ try {
                   removeImage()
                 }}
                 disabled={busy || ocrBusy}
-                className="group/example flex min-h-28 flex-col items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.02] px-2.5 py-4 text-center transition-colors duration-200 hover:border-blue-400/30 hover:bg-blue-500/[0.045] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200 focus-visible:ring-offset-2 focus-visible:ring-offset-[#101a30] disabled:cursor-not-allowed disabled:opacity-60"
+                className="group/example flex min-h-28 flex-col items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.02] px-2.5 py-4 text-center transition-colors duration-200 hover:-translate-y-1 hover:border-blue-300/50 hover:bg-blue-500/[0.07] hover:shadow-lg hover:shadow-blue-950/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#101a30] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04] text-xl text-slate-300 transition duration-300 group-hover/example:border-blue-400/25 group-hover/example:text-blue-300">
                   ↗
@@ -739,7 +739,7 @@ try {
 
           {/* Analysis results */}
           <section
-            className="scamlens-panel-enter scamlens-panel-delay min-w-0 rounded-2xl border border-white/[0.09] bg-[#0d1629]/95 p-4 shadow-xl shadow-black/20 transition duration-300 hover:border-blue-400/20 sm:p-6 lg:p-8"
+            className="scamlens-panel-enter scamlens-panel-delay min-w-0 rounded-2xl border border-white/[0.09] bg-[#0d1629]/95 p-4 shadow-xl shadow-black/20 transition duration-300 hover:border-blue-400/25 hover:shadow-blue-950/25 sm:p-6 lg:p-8"
             aria-busy={busy}
           >
             {!analysis && (
@@ -959,7 +959,7 @@ try {
                         </div>
                         <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.07]" role="progressbar" aria-label={category} aria-valuenow={count} aria-valuemin={0} aria-valuemax={maxCategoryCount}>
                           <div
-                            className="h-full rounded-full bg-gradient-to-r from-blue-600 to-cyan-300 transition-all duration-500"
+                            className="h-full rounded-full bg-gradient-to-r from-blue-600 to-blue-300 transition-all duration-500"
                             style={{ width: `${count === 0 ? 0 : Math.max(8, (count / maxCategoryCount) * 100)}%` }}
                           />
                         </div>
@@ -987,10 +987,10 @@ try {
                           key={`${item.signal}-${index}`}
                           onClick={() => setSelectedWarningIndex(index)}
                           aria-pressed={selectedWarningIndex === index}
-                          className={`block w-full rounded-xl border border-l-2 p-4 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d1629] sm:p-5 ${
+                          className={`block w-full rounded-xl border border-l-2 p-4 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d1629] sm:p-5 ${
                             selectedWarningIndex === index
                               ? 'border-amber-200/60 border-l-amber-200 bg-amber-300/[0.09] ring-2 ring-amber-200/20'
-                              : 'border-white/[0.12] border-l-amber-300/60 bg-white/[0.035] hover:border-amber-200/40 hover:bg-amber-300/[0.05]'
+                              : 'border-white/[0.12] border-l-amber-300/60 bg-white/[0.035] hover:-translate-y-0.5 hover:border-amber-200/40 hover:bg-amber-300/[0.05] hover:shadow-lg hover:shadow-amber-950/10'
                           }`}
                         >
                           <h4 className="text-sm font-semibold text-slate-100">
@@ -1032,7 +1032,7 @@ try {
                       {analysis.reassuringSigns.map((item, index) => (
                         <li
                           key={`${item}-${index}`}
-                          className="flex gap-3 rounded-lg px-1 py-1 text-sm leading-6 text-slate-300"
+                          className="flex gap-3 rounded-xl border border-emerald-300/[0.08] bg-emerald-300/[0.025] px-3 py-3 text-sm leading-6 text-slate-300 transition-colors duration-200 hover:border-emerald-300/20 hover:bg-emerald-300/[0.045]"
                         >
                           <span className="mt-0.5 text-emerald-300">✓</span>
                           <span>{item}</span>
@@ -1053,7 +1053,7 @@ try {
                     {analysis.recommendedActions.map((item, index) => (
                       <li
                         key={`${item}-${index}`}
-                        className="flex gap-3 text-sm leading-6 text-slate-300"
+                        className="flex gap-3 rounded-xl border border-blue-400/[0.10] bg-blue-500/[0.025] p-3 text-sm leading-6 text-slate-300 transition-colors duration-200 hover:border-blue-400/25 hover:bg-blue-500/[0.05]"
                       >
                         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-blue-400/20 bg-blue-500/10 text-xs font-bold text-blue-200">
                           {index + 1}
@@ -1162,7 +1162,7 @@ try {
         a:focus-visible,
         textarea:focus-visible,
         input:focus-visible {
-          outline: 3px solid #7dd3fc;
+          outline: 3px solid #75a1ff;
           outline-offset: 3px;
         }
 

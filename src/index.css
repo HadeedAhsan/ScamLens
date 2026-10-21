@@ -1,20 +1,22 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 :root {
-  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
   color: #edf4ff;
-  background: #080d1b;
+  background: #070b18;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  --electric-blue: #286bff;
-  --electric-blue-light: #55a0ff;
-  --deep-navy: #080d1b;
-  --panel: #101a30;
+  --electric-blue: #356dff;
+  --electric-blue-light: #75a1ff;
+  --electric-blue-glow: rgba(53, 109, 255, 0.24);
+  --deep-navy: #070b18;
+  --panel: #10182b;
+  --panel-border: rgba(129, 163, 255, 0.13);
 }
 
 * {
@@ -30,40 +32,48 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  background:
+    radial-gradient(ellipse at 50% -20%, rgba(42, 91, 220, 0.13), transparent 55%),
+    var(--deep-navy);
 }
 
-body::selection {
-  background: #286bff;
+::selection {
+  background: var(--electric-blue);
   color: white;
 }
 
-h1,
-h2,
-h3,
-h4 {
-  font-family: 'Space Grotesk', 'Inter', sans-serif;
+h1, h2, h3, h4 {
+  font-family: 'Space Grotesk', 'DM Sans', sans-serif;
+  letter-spacing: -0.025em;
 }
 
-button,
-a,
-textarea {
+button, a, textarea, input {
   -webkit-tap-highlight-color: transparent;
 }
 
 button {
   cursor: pointer;
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+a {
+  transition: color 180ms ease;
 }
 
 button:focus-visible,
 a:focus-visible,
-textarea:focus-visible {
+textarea:focus-visible,
+input:focus-visible {
   outline: 2px solid var(--electric-blue-light);
   outline-offset: 3px;
-}
-
-::selection {
-  background: #286bff;
-  color: white;
 }
 
 textarea {
@@ -72,6 +82,12 @@ textarea {
 
 button:disabled {
   cursor: not-allowed;
+}
+
+@media (hover: hover) {
+  button:hover:not(:disabled) {
+    border-color: rgba(117, 161, 255, 0.55);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

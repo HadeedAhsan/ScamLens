@@ -29,6 +29,8 @@ const rateLimiter = redis
     })
   : null
 
+const MODEL = 'gemini-3.5-flash-lite'
+
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse,
@@ -90,8 +92,9 @@ export default async function handler(
           'You have reached the request limit. Please wait a few minutes and try again.',
       })
     }
-  } catch {
-    console.error('ScamLens rate limiter failed.')
+  } catch (error) {
+    console.error('ScamLens rate limiter failed:', error)
+
     return res.status(503).json({
       error: 'ScamLens is temporarily unavailable. Please try again later.',
     })
@@ -105,10 +108,7 @@ export default async function handler(
     })
   }
 
-  try {
-    const ai = new GoogleGenAI({ apiKey })
-
-    const prompt = `
+  const prompt = `
 You are ScamLens, a cautious assistant that helps people assess
 potentially fraudulent messages.
 
@@ -154,24 +154,39 @@ User message:
 ${JSON.stringify(input.data.message)}
 `
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
-      contents: prompt,
-      config: {
-        responseMimeType: 'application/json',
+  try {
+    const ai = new GoogleGenAI({
+      apiKey,
+      httpOptions: {
+        timeout: 18000,
       },
     })
 
-    if (!response.text) {
-      throw new Error('The AI returned an empty response.')
+    const response = await ai.interactions.create({
+      model: MODEL,
+      input: `${prompt}\n\nReturn only valid JSON. Do not wrap it in markdown.`,
+      generation_config: {
+        thinking_level: 'low',
+      },
+    })
+
+    const responseText = response.output_text
+
+    if (!responseText) {
+      console.error('Gemini returned an empty response.')
+
+      return res.status(502).json({
+        error: 'The analysis response was empty. Please try again.',
+      })
     }
 
     let parsedJson: unknown
 
     try {
-      parsedJson = JSON.parse(response.text)
+      parsedJson = JSON.parse(responseText)
     } catch {
       console.error('Gemini returned invalid JSON.')
+
       return res.status(502).json({
         error: 'The analysis response was invalid. Please try again.',
       })
@@ -181,6 +196,7 @@ ${JSON.stringify(input.data.message)}
 
     if (!validatedResult.success) {
       console.error('Gemini returned an invalid response structure.')
+
       return res.status(502).json({
         error: 'The analysis could not be validated. Please try again.',
       })
@@ -206,6 +222,7 @@ ${JSON.stringify(input.data.message)}
       /RESOURCE_EXHAUSTED|quota exceeded|rate limit/i.test(message)
 
     console.error('ScamLens Gemini request failed:', {
+      model: MODEL,
       status: Number.isFinite(status) ? status : 'unknown',
       message: message || 'Unknown error',
     })
@@ -215,6 +232,22 @@ ${JSON.stringify(input.data.message)}
         code: 'AI_QUOTA_EXCEEDED',
         error:
           'ScamLens has reached its current AI usage limit. Please try again later. Independently verify important claims before taking action.',
+      })
+    }
+
+    if (status === 503 || /UNAVAILABLE|high demand/i.test(message)) {
+      return res.status(503).json({
+        code: 'AI_SERVICE_UNAVAILABLE',
+        error:
+          'The AI service is temporarily busy. Please wait a moment and try again.',
+      })
+    }
+
+    if (/timeout|timed out|deadline exceeded/i.test(message)) {
+      return res.status(504).json({
+        code: 'AI_TIMEOUT',
+        error:
+          'The analysis took too long. Please try again with a shorter message.',
       })
     }
 
