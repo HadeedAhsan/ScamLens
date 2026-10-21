@@ -71,6 +71,59 @@ const MAX_IMAGE_SIZE = 8 * 1024 * 1024
 const sampleMessage =
   'Congratulations! You have been selected for a job. Pay a refundable registration fee of Rs. 2,000 today to receive your offer letter.'
 
+
+type SignalSprintScenario = {
+  category: string
+  message: string
+  question: string
+  choices: string[]
+  correctIndex: number
+  explanation: string
+  takeaway: string
+}
+
+const signalSprintScenarios: SignalSprintScenario[] = [
+  {
+    category: 'JOB OFFER',
+    message: '“You are selected! Pay a refundable Rs. 2,000 registration fee today to unlock your offer letter.”',
+    question: 'What is the strongest warning sign?',
+    choices: [
+      'The message uses enthusiastic language',
+      'It asks for money upfront and pressures you with a deadline',
+      'It mentions an offer letter',
+    ],
+    correctIndex: 1,
+    explanation: 'A demand for an upfront fee combined with “today” pressure is a strong reason to pause. A legitimate-looking job title does not verify the sender.',
+    takeaway: 'Verify the vacancy using the company’s independently found official website or phone number. Do not pay to secure an offer.',
+  },
+  {
+    category: 'DELIVERY ALERT',
+    message: '“Your parcel is on hold. Pay Rs. 85 at this link within 30 minutes or it will be returned.”',
+    question: 'What should you do first?',
+    choices: [
+      'Open the link quickly before time runs out',
+      'Reply with your tracking number and address',
+      'Check the order through the courier’s official app or website',
+    ],
+    correctIndex: 2,
+    explanation: 'Unexpected small fees and countdowns can be used to make people act without checking. The message alone cannot prove whether a parcel exists.',
+    takeaway: 'Open the courier’s official app or type its known website address yourself. Avoid links in unexpected delivery messages.',
+  },
+  {
+    category: 'ACCOUNT SECURITY',
+    message: '“Support team: tell us the 6-digit code we just sent you to stop your account from being blocked.”',
+    question: 'Which response protects you best?',
+    choices: [
+      'Never share the one-time code; open the official app to check your account',
+      'Share it if the sender knows your name',
+      'Send the code, then change your password later',
+    ],
+    correctIndex: 0,
+    explanation: 'A one-time code can authorize a login or transaction. A name or logo does not authenticate the person asking for it.',
+    takeaway: 'Never share OTPs, PINs, or recovery codes with someone who contacts you. Use official channels you open yourself.',
+  },
+]
+
 const riskInfo: Record<
   RiskLevel,
   { label: string; description: string; symbol: string }
@@ -156,6 +209,12 @@ function App() {
   const [preview, setPreview] = useState('')
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
   const [selectedWarningIndex, setSelectedWarningIndex] = useState(0)
+  const [completedActions, setCompletedActions] = useState<number[]>([])
+  const [copyStatus, setCopyStatus] = useState('')
+  const [sprintIndex, setSprintIndex] = useState(0)
+  const [sprintChoice, setSprintChoice] = useState<number | null>(null)
+  const [sprintScore, setSprintScore] = useState(0)
+  const [sprintComplete, setSprintComplete] = useState(false)
   const [busy, setBusy] = useState(false)
   const [ocrBusy, setOcrBusy] = useState(false)
   const [ocrProgress, setOcrProgress] = useState(0)
@@ -303,6 +362,8 @@ function App() {
     setBusy(true)
     setError('')
     setAnalysis(null)
+    setCompletedActions([])
+    setCopyStatus('')
 
 
 
@@ -353,6 +414,8 @@ try {
 
   setAnalysis(data)
   setSelectedWarningIndex(0)
+  setCompletedActions([])
+  setCopyStatus('')
 } catch (err) {
   if (err instanceof Error && err.name === 'AbortError') {
     setError('The request took too long. Please try again.')
@@ -377,6 +440,8 @@ try {
   function resetAnalysis() {
     setAnalysis(null)
     setSelectedWarningIndex(0)
+    setCompletedActions([])
+    setCopyStatus('')
     setError('')
     setMessage('')
     removeImage()
@@ -396,6 +461,57 @@ try {
       }))
     : []
   const maxCategoryCount = Math.max(1, ...categoryCounts.map((item) => item.count))
+
+  function chooseSprintAnswer(choiceIndex: number) {
+    if (sprintChoice !== null || sprintComplete) return
+    setSprintChoice(choiceIndex)
+    if (choiceIndex === signalSprintScenarios[sprintIndex].correctIndex) {
+      setSprintScore((score) => score + 1)
+    }
+  }
+
+  function advanceSprint() {
+    if (sprintIndex >= signalSprintScenarios.length - 1) {
+      setSprintComplete(true)
+      return
+    }
+    setSprintIndex((index) => index + 1)
+    setSprintChoice(null)
+  }
+
+  function restartSprint() {
+    setSprintIndex(0)
+    setSprintChoice(null)
+    setSprintScore(0)
+    setSprintComplete(false)
+  }
+
+  async function copySafetySummary() {
+    if (!analysis) return
+    const summary = [
+      'ScamLens safety check',
+      `Risk assessment: ${riskInfo[analysis.riskLevel].label}`,
+      `Summary: ${analysis.summary}`,
+      '',
+      'Warning signs:',
+      ...(analysis.warningSigns.length
+        ? analysis.warningSigns.map((item) => `- ${item.signal}: ${item.evidence} — ${item.explanation}`)
+        : ['- No specific warning signs identified.']),
+      '',
+      'Recommended actions:',
+      ...analysis.recommendedActions.map((item, index) => `${index + 1}. ${item}`),
+      '',
+      `Important: ${analysis.uncertainty}`,
+      'AI guidance only—not proof of fraud or a guarantee of safety.',
+    ].join('\n')
+
+    try {
+      await navigator.clipboard.writeText(summary)
+      setCopyStatus('Safety summary copied')
+    } catch {
+      setCopyStatus('Copy unavailable in this browser')
+    }
+  }
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#080d1b] text-slate-100">
@@ -1043,25 +1159,53 @@ try {
                 )}
 
                 <div className="mt-7 rounded-2xl border border-blue-400/25 bg-blue-500/[0.07] p-5 sm:p-6">
-                  <h3 className="flex items-center gap-2 text-base font-bold text-blue-100">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/15 text-blue-300">
-                      →
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h3 className="flex items-center gap-2 text-base font-bold text-blue-100">
+                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/15 text-blue-300" aria-hidden="true">→</span>
+                        Your safety action plan
+                      </h3>
+                      <p className="mt-1 text-xs leading-5 text-slate-400">Check off each step as you complete it.</p>
+                    </div>
+                    <span className="rounded-full border border-blue-300/20 bg-blue-400/[0.08] px-3 py-1.5 text-xs font-semibold text-blue-100" aria-live="polite">
+                      {completedActions.length} of {analysis.recommendedActions.length} done
                     </span>
-                    What you should do next
-                  </h3>
-                  <ol className="mt-4 space-y-4">
-                    {analysis.recommendedActions.map((item, index) => (
-                      <li
-                        key={`${item}-${index}`}
-                        className="flex gap-3 rounded-xl border border-blue-400/[0.10] bg-blue-500/[0.025] p-3 text-sm leading-6 text-slate-300 transition-colors duration-200 hover:border-blue-400/25 hover:bg-blue-500/[0.05]"
-                      >
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-blue-400/20 bg-blue-500/10 text-xs font-bold text-blue-200">
-                          {index + 1}
-                        </span>
-                        <span className="pt-0.5">{item}</span>
-                      </li>
-                    ))}
-                  </ol>
+                  </div>
+                  <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/[0.08]" role="progressbar" aria-label="Safety action progress" aria-valuenow={completedActions.length} aria-valuemin={0} aria-valuemax={analysis.recommendedActions.length}>
+                    <div className="h-full rounded-full bg-gradient-to-r from-blue-600 to-blue-300 transition-all duration-300" style={{ width: `${(completedActions.length / analysis.recommendedActions.length) * 100}%` }} />
+                  </div>
+                  <ul className="mt-4 space-y-3">
+                    {analysis.recommendedActions.map((item, index) => {
+                      const isDone = completedActions.includes(index)
+                      return (
+                        <li key={`${item}-${index}`}>
+                          <label className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm leading-6 transition duration-200 ${isDone ? 'border-emerald-300/25 bg-emerald-300/[0.06] text-slate-400' : 'border-blue-400/[0.10] bg-blue-500/[0.025] text-slate-200 hover:border-blue-400/30 hover:bg-blue-500/[0.05]'}`}>
+                            <input
+                              type="checkbox"
+                              checked={isDone}
+                              onChange={() => setCompletedActions((current) => isDone ? current.filter((value) => value !== index) : [...current, index])}
+                              className="mt-1 h-4 w-4 shrink-0 accent-blue-400"
+                            />
+                            <span className={isDone ? 'line-through decoration-emerald-300/60' : ''}>{item}</span>
+                          </label>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                  {completedActions.length === analysis.recommendedActions.length && (
+                    <p className="mt-3 rounded-lg border border-emerald-300/20 bg-emerald-300/[0.06] px-3 py-2 text-xs text-emerald-200" role="status">Checklist complete. Remember to verify important claims independently.</p>
+                  )}
+                </div>
+
+                <div className="mt-4 flex flex-col gap-2 rounded-xl border border-white/[0.08] bg-white/[0.025] p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-200">Keep a useful summary</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-400">Copy the risk assessment, evidence, and recommended actions to share or save.</p>
+                  </div>
+                  <button type="button" onClick={copySafetySummary} className="shrink-0 rounded-lg border border-blue-400/25 bg-blue-500/[0.08] px-4 py-2.5 text-sm font-semibold text-blue-100 transition hover:border-blue-300/50 hover:bg-blue-500/[0.15] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300">
+                    Copy safety summary ↗
+                  </button>
+                  {copyStatus && <p className="text-xs text-blue-200 sm:basis-full" role="status">{copyStatus}</p>}
                 </div>
 
                 <div className="mt-6 border-t border-white/[0.07] pt-5">
@@ -1081,6 +1225,85 @@ try {
             )}
           </section>
         </div>
+
+        <section className="mx-auto mt-14 max-w-6xl overflow-hidden rounded-3xl border border-blue-400/20 bg-gradient-to-br from-[#101d36] via-[#0b1426] to-[#090f1d] shadow-2xl shadow-blue-950/20" aria-labelledby="signal-sprint-title">
+          <div className="grid gap-0 lg:grid-cols-[0.82fr_1.18fr]">
+            <div className="relative overflow-hidden border-b border-blue-300/10 p-6 sm:p-8 lg:border-b-0 lg:border-r">
+              <div aria-hidden="true" className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-blue-500/10 blur-3xl" />
+              <div className="relative">
+                <span className="inline-flex items-center gap-2 rounded-full border border-blue-300/20 bg-blue-400/[0.08] px-3 py-1.5 text-[11px] font-bold tracking-[0.16em] text-blue-200">
+                  <span aria-hidden="true">✦</span> INTERACTIVE TRAINING LAB
+                </span>
+                <h2 id="signal-sprint-title" className="mt-4 font-['Space_Grotesk'] text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                  Signal <span className="text-blue-300">Sprint</span>
+                </h2>
+                <p className="mt-3 max-w-md text-sm leading-6 text-slate-300">
+                  Three realistic messages. One safer decision at a time. Learn to spot the pressure tactic before it catches you off guard.
+                </p>
+                <div className="mt-6 flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-blue-300/20 bg-blue-400/[0.08] text-xl text-blue-200" aria-hidden="true">⌁</div>
+                  <div>
+                    <p className="text-sm font-semibold text-white">Train your scam radar</p>
+                    <p className="mt-1 text-xs text-slate-400">No account needed · Progress stays in this session</p>
+                  </div>
+                </div>
+                <div className="mt-6 flex gap-2" aria-label={`Scenario ${sprintComplete ? signalSprintScenarios.length : sprintIndex + 1} of ${signalSprintScenarios.length}`}>
+                  {signalSprintScenarios.map((scenario, index) => (
+                    <div key={scenario.category} className={`h-1.5 flex-1 rounded-full transition-colors ${index < sprintIndex || sprintComplete ? 'bg-blue-300' : index === sprintIndex ? 'bg-blue-500' : 'bg-white/10'}`} />
+                  ))}
+                </div>
+                <div className="mt-2 flex justify-between text-xs text-slate-400">
+                  <span>{sprintComplete ? 'Training complete' : `Scenario ${sprintIndex + 1} of ${signalSprintScenarios.length}`}</span>
+                  <span className="font-semibold text-blue-200">Score: {sprintScore}/{signalSprintScenarios.length}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-5 sm:p-8">
+              {sprintComplete ? (
+                <div className="flex min-h-full flex-col justify-center" role="status" aria-live="polite">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-blue-300/20 bg-blue-400/[0.08] text-2xl text-blue-200">{sprintScore === signalSprintScenarios.length ? '★' : sprintScore >= 2 ? '✓' : '↗'}</div>
+                  <p className="mt-5 text-xs font-bold uppercase tracking-[0.16em] text-blue-200">Sprint complete</p>
+                  <h3 className="mt-2 font-['Space_Grotesk'] text-2xl font-bold text-white">{sprintScore === signalSprintScenarios.length ? 'Sharp eyes.' : sprintScore >= 2 ? 'Your radar is improving.' : 'Every check builds awareness.'}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-300">You chose {sprintScore} of {signalSprintScenarios.length} safer responses. The goal is not to guess perfectly—it is to pause, verify, and avoid acting under pressure.</p>
+                  <button type="button" onClick={restartSprint} className="mt-6 w-full rounded-xl border border-blue-300/30 bg-blue-500/15 px-4 py-3 text-sm font-bold text-blue-100 transition hover:bg-blue-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 sm:w-auto">Run the sprint again ↻</button>
+                </div>
+              ) : (
+                <div key={sprintIndex} className="animate-[fadeIn_0.3s_ease-out]">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="rounded-md border border-amber-300/20 bg-amber-300/[0.07] px-2.5 py-1 text-[10px] font-bold tracking-[0.14em] text-amber-200">{signalSprintScenarios[sprintIndex].category}</span>
+                    <span className="text-xs text-slate-400">Choose the safest move</span>
+                  </div>
+                  <blockquote className="mt-4 rounded-2xl border border-white/10 bg-[#080f1e]/80 p-4 text-sm leading-7 text-slate-100 sm:p-5">
+                    {signalSprintScenarios[sprintIndex].message}
+                  </blockquote>
+                  <h3 className="mt-5 text-base font-bold text-white">{signalSprintScenarios[sprintIndex].question}</h3>
+                  <div className="mt-3 space-y-2.5">
+                    {signalSprintScenarios[sprintIndex].choices.map((choice, index) => {
+                      const isCorrect = index === signalSprintScenarios[sprintIndex].correctIndex
+                      const isChosen = sprintChoice === index
+                      const revealed = sprintChoice !== null
+                      return (
+                        <button key={choice} type="button" disabled={revealed} onClick={() => chooseSprintAnswer(index)} aria-pressed={isChosen} className={`flex w-full items-start gap-3 rounded-xl border p-3.5 text-left text-sm leading-6 transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 disabled:cursor-default ${revealed && isCorrect ? 'border-emerald-300/40 bg-emerald-300/[0.08] text-emerald-100' : revealed && isChosen ? 'border-rose-300/35 bg-rose-300/[0.06] text-rose-100' : 'border-white/[0.09] bg-white/[0.025] text-slate-200 hover:-translate-y-0.5 hover:border-blue-300/30 hover:bg-blue-400/[0.05]'}`}>
+                          <span className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border text-xs font-bold ${revealed && isCorrect ? 'border-emerald-300/30 bg-emerald-300/10' : revealed && isChosen ? 'border-rose-300/30 bg-rose-300/10' : 'border-white/10 bg-white/[0.04]'}`}>{revealed && isCorrect ? '✓' : String.fromCharCode(65 + index)}</span>
+                          <span>{choice}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {sprintChoice !== null && (
+                    <div className="mt-4 rounded-xl border border-blue-300/20 bg-blue-400/[0.055] p-4 animate-[fadeIn_0.25s_ease-out]" role="status" aria-live="polite">
+                      <p className={`text-sm font-bold ${sprintChoice === signalSprintScenarios[sprintIndex].correctIndex ? 'text-emerald-200' : 'text-amber-200'}`}>{sprintChoice === signalSprintScenarios[sprintIndex].correctIndex ? 'Good call — you spotted the safer move.' : 'Not quite — here is the safer move.'}</p>
+                      <p className="mt-2 text-sm leading-6 text-slate-300">{signalSprintScenarios[sprintIndex].explanation}</p>
+                      <p className="mt-3 border-t border-white/[0.08] pt-3 text-xs leading-5 text-blue-100"><strong>Remember:</strong> {signalSprintScenarios[sprintIndex].takeaway}</p>
+                      <button type="button" onClick={advanceSprint} className="mt-4 w-full rounded-xl bg-blue-500 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-950/25 transition hover:bg-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 sm:w-auto">{sprintIndex === signalSprintScenarios.length - 1 ? 'See my results →' : 'Next scenario →'}</button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
 
         <footer className="mx-auto mt-14 max-w-6xl border-t border-white/[0.07] pt-6 text-center">
           <div className="mb-2 flex items-center justify-center gap-2">
@@ -1156,6 +1379,35 @@ try {
         }
         .scamlens-sheen {
           animation: scamlens-sheen-pass 7s ease-in-out infinite;
+        }
+
+        /* Keep interactive surfaces feeling consistent across the app. */
+        .scamlens-panel-enter,
+        .scamlens-workflow-float {
+          will-change: transform, opacity;
+        }
+
+        button,
+        a,
+        textarea,
+        input,
+        [role="button"] {
+          touch-action: manipulation;
+        }
+
+        textarea,
+        input {
+          min-width: 0;
+        }
+
+        @media (max-width: 640px) {
+          .scamlens-orb-drift {
+            opacity: 0.55;
+          }
+
+          .scamlens-search-float {
+            animation-duration: 7s;
+          }
         }
 
         button:focus-visible,
