@@ -1,4 +1,3 @@
-
 import 'dotenv/config'
 import dotenv from 'dotenv'
 import { resolve } from 'node:path'
@@ -6,6 +5,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { GoogleGenAI } from '@google/genai'
 import { Redis } from '@upstash/redis'
 import { Ratelimit } from '@upstash/ratelimit'
+import { neon } from '@neondatabase/serverless'
 import { createHash } from 'node:crypto'
 
 import { bodySchema, resultSchema } from './analyze.schemas.js'
@@ -29,7 +29,55 @@ const rateLimiter = redis
     })
   : null
 
+const databaseUrl = process.env.DATABASE_URL
+const sql = databaseUrl ? neon(databaseUrl) : null
+
 const MODEL = 'gemini-3.5-flash-lite'
+
+function categorizeMessage(message: string): string {
+  const text = message.toLowerCase()
+
+  if (
+    /\b(job|career|hiring|recruit|salary|employment|interview|vacancy)\b/.test(text) ||
+    /نوکری|ملازمت|تنخواہ/.test(text)
+  ) {
+    return 'job_offer'
+  }
+
+  if (
+    /\b(delivery|parcel|shipment|courier|tracking|package)\b/.test(text) ||
+    /پارسل|ڈیلیوری/.test(text)
+  ) {
+    return 'delivery'
+  }
+
+  if (
+    /\b(bank|account|password|login|verify|verification|otp|one.?time.?password|security alert|suspended account)\b/.test(text) ||
+    /اکاؤنٹ|پاس ورڈ|تصدیق/.test(text)
+  ) {
+    return 'account_security'
+  }
+
+  if (
+    /\b(scholarship|grant|tuition|financial aid|university admission)\b/.test(text) ||
+    /اسکالرشپ|وظیفہ/.test(text)
+  ) {
+    return 'scholarship'
+  }
+
+  if (
+    /\b(pay|payment|fee|refund|deposit|transfer|prize|winner|cash|money|invoice)\b/.test(text) ||
+    /ادائیگی|رقم|فیس|انعام/.test(text)
+  ) {
+    return 'payment_or_prize'
+  }
+
+  if (/\b(link|click here|http|www\.|url)\b/i.test(text)) {
+    return 'link_or_website'
+  }
+
+  return 'other'
+}
 
 export default async function handler(
   req: VercelRequest,
@@ -200,6 +248,23 @@ ${JSON.stringify(input.data.message)}
       return res.status(502).json({
         error: 'The analysis could not be validated. Please try again.',
       })
+    }
+
+    // Logging is best-effort: a database outage must not block the analysis.
+    if (sql) {
+      try {
+        await sql`
+          INSERT INTO public.analysis_logs (risk_level, message_category)
+          VALUES (
+            ${validatedResult.data.riskLevel},
+            ${categorizeMessage(input.data.message)}
+          )
+        `
+      } catch (error) {
+        console.error('ScamLens analysis logging failed:', error)
+      }
+    } else {
+      console.warn('DATABASE_URL is not configured; skipping analysis log.')
     }
 
     return res.status(200).json(validatedResult.data)
