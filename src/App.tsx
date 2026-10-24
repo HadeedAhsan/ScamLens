@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react'
 import { createWorker } from 'tesseract.js'
 
-
 type RiskLevel = 'low' | 'medium' | 'high' | 'inconclusive'
 
 type Analysis = {
@@ -518,11 +517,11 @@ try {
       {/* Ambient electric-blue background */}
       <div
         aria-hidden="true"
-        className="scamlens-glow-drift pointer-events-none absolute inset-x-0 top-0 h-[560px] bg-[radial-gradient(ellipse_at_50%_0%,rgba(40,107,255,0.17),transparent_65%)]"
+        className="scamlens-glow-drift pointer-events-none absolute inset-x-0 top-0 h-140 bg-[radial-gradient(ellipse_at_50%_0%,rgba(40,107,255,0.17),transparent_65%)]"
       />
       <div
         aria-hidden="true"
-        className="scamlens-orb-drift pointer-events-none absolute -left-40 top-96 h-80 w-80 rounded-full bg-blue-600/[0.06] blur-3xl"
+        className="scamlens-orb-drift pointer-events-none absolute -left-40 top-96 h-80 w-80 rounded-full bg-blue-600/6 blur-3xl"
       />
       <div
         aria-hidden="true"
@@ -941,7 +940,7 @@ try {
                   </button>
                 </div>
 
-                <div className="mt-5 rounded-xl border border-white/[0.08] bg-[#080f1e]/70 p-4 sm:p-5">
+                <div className="mt-5 rounded-xl border border-white/8 bg-[#080f1e]/70 p-4 sm:p-5">
                   <div className="mb-3 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
                       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-blue-400/20 bg-blue-500/10 text-blue-300" aria-hidden="true">
