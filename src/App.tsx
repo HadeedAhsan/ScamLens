@@ -219,6 +219,7 @@ function App() {
   const [ocrProgress, setOcrProgress] = useState(0)
   const [error, setError] = useState('')
   const fileInput = useRef<HTMLInputElement>(null)
+  const checkerRef = useRef<HTMLElement>(null)
 
   async function preprocessImage(file: File): Promise<HTMLCanvasElement> {
   const image = await createImageBitmap(file)
@@ -525,7 +526,7 @@ try {
       />
       <div
         aria-hidden="true"
-        className="scamlens-orb-drift scamlens-orb-delay pointer-events-none absolute -right-40 top-[700px] h-96 w-96 rounded-full bg-indigo-500/[0.05] blur-3xl"
+        className="scamlens-orb-drift scamlens-orb-delay pointer-events-none absolute -right-40 top-175 h-96 w-96 rounded-full bg-indigo-500/5 blur-3xl"
       />
 
       <header className="scamlens-header-enter relative border-b border-white/[0.07] bg-[#080d1b]/75 backdrop-blur-xl">
@@ -566,7 +567,7 @@ try {
 
             <h1 className="font-['Space_Grotesk'] text-4xl font-bold leading-[1.08] tracking-tight text-white sm:text-5xl lg:text-6xl">
               Not sure it's safe?
-              <span className="mt-2 block bg-gradient-to-r from-blue-300 via-blue-500 to-indigo-400 bg-clip-text pb-1 text-transparent">
+              <span className="mt-2 block bg-linear-to-r from-blue-300 via-blue-500 to-indigo-400 bg-clip-text pb-1 text-transparent">
                 Let's look closer.
               </span>
             </h1>
@@ -576,10 +577,27 @@ try {
               Understand the warning signs before you click, pay, or reply.
             </p>
 
+            <button
+              type="button"
+              onClick={() =>
+                checkerRef.current?.scrollIntoView({
+                  behavior: 'smooth',
+                  block: 'start',
+                })
+              }
+              className="mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-950/35 transition duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-600/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#080d1b]"
+            >
+              Check a message
+              <span aria-hidden="true" className="text-lg">→</span>
+            </button>
+            <p className="mt-2 text-xs text-slate-400">
+              Paste a message or upload a screenshot. It only takes a moment.
+            </p>
+
             <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-3 text-xs text-slate-300 lg:justify-start">
               <span className="flex items-center gap-2">
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-400/10 text-blue-300">✓</span>
-                Evidence-based analysis
+                Context-aware analysis
               </span>
               <span className="flex items-center gap-2">
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-400/10 text-blue-300">✓</span>
@@ -592,7 +610,7 @@ try {
             </div>
           </div>
 
-          <aside className="scamlens-workflow-float mx-auto w-full max-w-md rounded-2xl border border-blue-400/15 bg-gradient-to-br from-[#12213b] to-[#0c1425] p-5 shadow-xl shadow-blue-950/15 transition duration-300 hover:border-blue-400/30 hover:shadow-blue-950/30 lg:mx-0 lg:mb-1 lg:max-w-none sm:p-6">
+          <aside className="scamlens-workflow-float mx-auto w-full max-w-md rounded-2xl border border-blue-400/15 bg-linear-to-br from-[#12213b] to-[#0c1425] p-5 shadow-xl shadow-blue-950/15 transition duration-300 hover:border-blue-400/30 hover:shadow-blue-950/30 lg:mx-0 lg:mb-1 lg:max-w-none sm:p-6">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-blue-400/20 bg-blue-500/10 text-blue-200">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="h-5 w-5" aria-hidden="true">
@@ -632,9 +650,9 @@ try {
         </section>
 
         <div className="mx-auto mb-4 flex max-w-6xl items-center gap-3" aria-hidden="true">
-          <span className="h-px flex-1 bg-gradient-to-r from-transparent via-blue-400/20 to-blue-400/10" />
+          <span className="h-px flex-1 bg-linear-to-r from-transparent via-blue-400/20 to-blue-400/10" />
           <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Your message check</span>
-          <span className="h-px flex-1 bg-gradient-to-l from-transparent via-blue-400/20 to-blue-400/10" />
+          <span className="h-px flex-1 bg-linear-to-l from-transparent via-blue-400/20 to-blue-400/10" />
         </div>
 
         <div
@@ -643,7 +661,10 @@ try {
           }`}
         >
           {/* Input panel */}
-          <section className="scamlens-panel-enter group/panel rounded-2xl border border-white/[0.09] bg-gradient-to-b from-[#111d34] to-[#0d1526] p-4 shadow-xl shadow-black/20 transition duration-300 hover:-translate-y-0.5 hover:border-blue-400/25 hover:shadow-blue-950/20 sm:p-6 lg:p-7">
+          <section
+            ref={checkerRef}
+            className="scamlens-panel-enter group/panel scroll-mt-8 rounded-2xl border border-white/[0.09] bg-linear-to-b from-[#111d34] to-[#0d1526] p-4 shadow-xl shadow-black/20 transition duration-300 hover:-translate-y-0.5 hover:border-blue-400/25 hover:shadow-blue-950/20 sm:p-6 lg:p-7"
+          >
             <div className="mb-6 flex items-start justify-between gap-3">
               <div>
                 <div className="mb-2 flex items-center gap-2">
@@ -659,7 +680,7 @@ try {
                   Paste text or extract it from a screenshot.
                 </p>
               </div>
-              <span className="shrink-0 rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 py-1.5 text-xs font-medium text-slate-300">
+              <span className="shrink-0 rounded-lg border border-white/8 bg-white/[0.03] px-2.5 py-1.5 text-xs font-medium text-slate-300">
                 Privacy first
               </span>
             </div>
