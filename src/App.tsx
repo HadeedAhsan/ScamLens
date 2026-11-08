@@ -536,7 +536,7 @@ try {
             className="group flex items-center gap-3 rounded-lg"
             aria-label="ScamLens home"
           >
-            <img src="/scamlens-logo.png" alt="ScamLens logo" className="h-12 w-12 rounded-xl object-contain" />
+            <img src="/scamlens-logo.webp" alt="ScamLens logo" className="h-12 w-12 rounded-xl object-contain" />
             <span>
               <span className="block font-['Space_Grotesk'] text-xl font-bold tracking-tight text-white">
                 Scam<span className="text-blue-400">Lens</span>
@@ -585,7 +585,7 @@ try {
                   block: 'start',
                 })
               }
-              className="mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-950/35 transition duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-600/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#080d1b]"
+              className="mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-blue-600 via-blue-500 to-blue-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-950/35 transition duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-600/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#080d1b]"
             >
               Check a message
               <span aria-hidden="true" className="text-lg">→</span>
@@ -663,7 +663,7 @@ try {
           {/* Input panel */}
           <section
             ref={checkerRef}
-            className="scamlens-panel-enter group/panel scroll-mt-8 rounded-2xl border border-white/[0.09] bg-linear-to-b from-[#111d34] to-[#0d1526] p-4 shadow-xl shadow-black/20 transition duration-300 hover:-translate-y-0.5 hover:border-blue-400/25 hover:shadow-blue-950/20 sm:p-6 lg:p-7"
+            className="scamlens-panel-enter group/panel scroll-mt-8 rounded-2xl border border-white/9 bg-linear-to-b from-[#111d34] to-[#0d1526] p-4 shadow-xl shadow-black/20 transition duration-300 hover:-translate-y-0.5 hover:border-blue-400/25 hover:shadow-blue-950/20 sm:p-6 lg:p-7"
           >
             <div className="mb-6 flex items-start justify-between gap-3">
               <div>
@@ -692,9 +692,12 @@ try {
                 disabled={ocrBusy || busy}
                 className="group/upload flex min-h-28 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-blue-400/35 bg-blue-500/[0.045] px-2.5 py-4 text-center transition-colors duration-200 hover:-translate-y-1 hover:border-blue-300/80 hover:bg-blue-500/[0.10] hover:shadow-lg hover:shadow-blue-950/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#101a30] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-blue-400/20 bg-blue-500/10 text-xl text-blue-300 transition duration-300 group-hover/upload:scale-110 group-hover/upload:bg-blue-500/20">
-                  ↑
-                </span>
+                <img
+                  src="/scamlens-screenshot-upload.webp"
+                  alt=""
+                  aria-hidden="true"
+                  className="h-12 w-12 object-contain transition duration-300 group-hover/upload:scale-110"
+                />
                 <span className="text-sm font-semibold text-slate-100">
                   Upload screenshot
                 </span>
@@ -818,10 +821,13 @@ try {
               </p>
             )}
 
-            <div className="mt-5 flex gap-3 rounded-xl border border-blue-400/15 bg-blue-500/[0.045] p-3.5">
-              <span className="mt-0.5 shrink-0 text-blue-300" aria-hidden="true">
-                !
-              </span>
+            <div className="mt-5 flex items-center gap-3 rounded-xl border border-blue-400/15 bg-blue-500/[0.045] p-3.5">
+              <img
+                src="/scamlens-privacy.webp"
+                alt=""
+                aria-hidden="true"
+                className="h-14 w-14 shrink-0 object-contain"
+              />
               <p className="text-xs leading-5 text-slate-300">
                 <strong className="font-semibold text-blue-200">
                   Protect your privacy.
@@ -880,21 +886,13 @@ try {
           >
             {!analysis && (
               <div className="flex min-h-[430px] flex-col items-center justify-center py-10 text-center">
-                <div className="scamlens-search-float relative mb-6 flex h-20 w-20 items-center justify-center">
-                  <span className="absolute inset-0 animate-pulse rounded-3xl bg-blue-500/[0.08] blur-xl" />
-                  <span className="absolute inset-1 rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/[0.13] to-indigo-500/[0.04]" />
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    className="relative h-9 w-9 text-blue-300"
-                    aria-hidden="true"
-                  >
-                    <circle cx="10.8" cy="10.8" r="6.8" />
-                    <path d="m16 16 4.5 4.5M10.8 7.5v6.6M7.5 10.8h6.6" />
-                  </svg>
-                </div>
+                <div className="scamlens-search-float relative mb-4 flex items-center justify-center">
+                  <img
+                       src="/scamlens-empty-state.webp"
+                       alt="ScamLens examining a message with a magnifying glass"
+                       className="h-auto w-44 max-w-full object-contain drop-shadow-[0_0_24px_rgba(37,99,235,0.18)]"
+                  />
+               </div>
 
                 <span className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-blue-200">
                   Your safety dashboard
@@ -1013,6 +1011,12 @@ try {
                   }`}
                 >
                   <div className="flex items-center gap-3">
+                    <img
+                      src="/scamlens-analysis-result.webp"
+                      alt=""
+                      aria-hidden="true"
+                      className="h-16 w-16 shrink-0 object-contain"
+                    />
                     <span
                       className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-black/20 text-2xl font-bold ${
                         analysis.riskLevel === 'high'
@@ -1105,15 +1109,23 @@ try {
                 </section>
 
                 <div className="mt-7">
-                  <h3 className="flex items-center gap-2 text-sm font-bold text-white">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-300/10 text-amber-300">
-                      !
-                    </span>
-                    Warning signs
+                  <div className="mb-3 flex items-center gap-3">
+                    <img
+                      src="/scamlens-warning-signal.webp"
+                      alt=""
+                      aria-hidden="true"
+                      className="h-12 w-12 shrink-0 object-contain"
+                    />
+                    <h3 className="flex min-w-0 flex-1 items-center gap-2 text-sm font-bold text-white">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-300/10 text-amber-300">
+                        !
+                      </span>
+                      Warning signs
                     <span className="ml-auto rounded-full bg-white/[0.04] px-2 py-1 text-xs font-medium text-slate-400">
                       {analysis.warningSigns.length} found
                     </span>
-                  </h3>
+                    </h3>
+                  </div>
 
                   {analysis.warningSigns.length ? (
                     <div className="mt-3 space-y-3">
@@ -1257,9 +1269,17 @@ try {
                 <h2 id="signal-sprint-title" className="mt-4 font-['Space_Grotesk'] text-2xl font-bold tracking-tight text-white sm:text-3xl">
                   Signal <span className="text-blue-300">Sprint</span>
                 </h2>
-                <p className="mt-3 max-w-md text-sm leading-6 text-slate-300">
-                  Three realistic messages. One safer decision at a time. Learn to spot the pressure tactic before it catches you off guard.
-                </p>
+                <div className="mt-4 flex items-center gap-3">
+                  <img
+                    src="/scamlens-education.webp"
+                    alt=""
+                    aria-hidden="true"
+                    className="h-24 w-24 shrink-0 object-contain"
+                  />
+                  <p className="max-w-md text-sm leading-6 text-slate-300">
+                    Three realistic messages. One safer decision at a time. Learn to spot the pressure tactic before it catches you off guard.
+                  </p>
+                </div>
                 <div className="mt-6 flex items-center gap-3">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-blue-300/20 bg-blue-400/[0.08] text-xl text-blue-200" aria-hidden="true">⌁</div>
                   <div>
@@ -1327,7 +1347,7 @@ try {
 
         <footer className="mx-auto mt-14 max-w-6xl border-t border-white/[0.07] pt-6 text-center">
           <div className="mb-2 flex items-center justify-center gap-2">
-            <img src="/scamlens-logo.png" alt="ScamLens logo" className="h-10 w-10 rounded-xl object-contain" />
+            <img src="/scamlens-logo.webp" alt="ScamLens logo" className="h-10 w-10 rounded-xl object-contain" />
             <span className="font-['Space_Grotesk'] text-sm font-bold text-slate-300">
               Scam<span className="text-blue-400">Lens</span>
             </span>
