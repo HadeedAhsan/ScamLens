@@ -1287,7 +1287,7 @@ try {
                     <p className="mt-1 text-xs text-slate-400">No account needed · Progress stays in this session</p>
                   </div>
                 </div>
-                <div className="mt-6 flex gap-2" aria-label={`Scenario ${sprintComplete ? signalSprintScenarios.length : sprintIndex + 1} of ${signalSprintScenarios.length}`}>
+                <div className="mt-6 flex gap-2" role="group" aria-label={`Scenario ${sprintComplete ? signalSprintScenarios.length : sprintIndex + 1} of ${signalSprintScenarios.length}`}>
                   {signalSprintScenarios.map((scenario, index) => (
                     <div key={scenario.category} className={`h-1.5 flex-1 rounded-full transition-colors ${index < sprintIndex || sprintComplete ? 'bg-blue-300' : index === sprintIndex ? 'bg-blue-500' : 'bg-white/10'}`} />
                   ))}

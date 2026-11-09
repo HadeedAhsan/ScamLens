@@ -1,8 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import "@fontsource-variable/dm-sans";
+@import "@fontsource-variable/space-grotesk";
 @import "tailwindcss";
 
 :root {
-  font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  font-family: 'Space Grotesk Variable', ui-sans-serif, system-ui, sans-serif;
   color: #edf4ff;
   background: #070b18;
   font-synthesis: none;
