@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react'
-import { createWorker } from 'tesseract.js'
 
 type RiskLevel = 'low' | 'medium' | 'high' | 'inconclusive'
 
@@ -294,9 +293,12 @@ function App() {
     setOcrBusy(true)
     setOcrProgress(0)
 
-    let worker: Awaited<ReturnType<typeof createWorker>> | undefined
+    let worker:
+  | Awaited<ReturnType<typeof import('tesseract.js').createWorker>>
+  | undefined
 
     try {
+      const { createWorker } = await import('tesseract.js')
       worker = await createWorker('eng+urd', 1, {
         logger: (status) => {
           if (status.status === 'recognizing text') {
@@ -536,7 +538,14 @@ try {
             className="group flex items-center gap-3 rounded-lg"
             aria-label="ScamLens home"
           >
-            <img src="/scamlens-logo.webp" alt="ScamLens logo" className="h-12 w-12 rounded-xl object-contain" />
+            <img
+  src="/scamlens-logo.webp"
+  alt="ScamLens logo"
+  width={48}
+  height={48}
+  decoding="async"
+  className="h-12 w-12 rounded-xl object-contain"
+/>
             <span>
               <span className="block font-['Space_Grotesk'] text-xl font-bold tracking-tight text-white">
                 Scam<span className="text-blue-400">Lens</span>
@@ -744,10 +753,13 @@ try {
             {preview && (
               <div className="mb-5 flex items-start gap-3 rounded-xl border border-blue-400/15 bg-blue-500/[0.035] p-3">
                 <img
-                  src={preview}
-                  alt="Uploaded screenshot preview"
-                  className="h-20 w-20 shrink-0 rounded-lg border border-white/10 object-cover"
-                />
+  src={preview}
+  alt="Uploaded screenshot preview"
+  width={80}
+  height={80}
+  decoding="async"
+  className="h-20 w-20 shrink-0 rounded-lg border border-white/10 object-cover"
+/>
                 <div className="min-w-0 flex-1">
                   <p className="break-words text-sm font-medium text-slate-200">
                     {image?.name}
@@ -888,10 +900,13 @@ try {
               <div className="flex min-h-[430px] flex-col items-center justify-center py-10 text-center">
                 <div className="scamlens-search-float relative mb-4 flex items-center justify-center">
                   <img
-                       src="/scamlens-empty-state.webp"
-                       alt="ScamLens examining a message with a magnifying glass"
-                       className="h-auto w-44 max-w-full object-contain drop-shadow-[0_0_24px_rgba(37,99,235,0.18)]"
-                  />
+  src="/scamlens-empty-state.webp"
+  alt="ScamLens examining a message with a magnifying glass"
+  width={176}
+  height={176}
+  decoding="async"
+  className="h-auto w-44 max-w-full object-contain drop-shadow-[0_0_24px_rgba(37,99,235,0.18)]"
+/>
                </div>
 
                 <span className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-blue-200">
@@ -1347,7 +1362,15 @@ try {
 
         <footer className="mx-auto mt-14 max-w-6xl border-t border-white/[0.07] pt-6 text-center">
           <div className="mb-2 flex items-center justify-center gap-2">
-            <img src="/scamlens-logo.webp" alt="ScamLens logo" className="h-10 w-10 rounded-xl object-contain" />
+            <img
+  src="/scamlens-logo.webp"
+  alt="ScamLens logo"
+  width={40}
+  height={40}
+  loading="lazy"
+  decoding="async"
+  className="h-10 w-10 rounded-xl object-contain"
+/>
             <span className="font-['Space_Grotesk'] text-sm font-bold text-slate-300">
               Scam<span className="text-blue-400">Lens</span>
             </span>
